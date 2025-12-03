@@ -10,13 +10,19 @@ static const char *NVS_NAMESPACE = "vent_config";
 static const char *KEY_CONFIG = "sys_cfg";
 
 // Configuración por defecto (Si es la primera vez que arranca)
+// Configuración por defecto
 static const system_config_t default_config = {
-    .operation_mode = 1, // AUTO
+    .operation_mode = 2, // <--- CAMBIADO A 2 (MODE_SCHEDULE)
     .manual_duty = 50,
     .schedules = {
-        // Ejemplo: Siesta 14:00 - 16:00
-        { .active = true, .start_hour=14, .start_min=0, .end_hour=16, .end_min=0, .temp_min_0_percent=24.0, .temp_max_100_percent=27.0 },
-        // Otros vacíos
+        // REGISTRO 0: Activo todo el día (00:00 a 23:59) para pruebas
+        { 
+            .active = true, 
+            .start_hour=0, .start_min=0, 
+            .end_hour=23, .end_min=59, 
+            .temp_min_0_percent=23.0,   // Empezar a girar a los 23°C
+            .temp_max_100_percent=26.0  // Máximo a los 26°C
+        },
         {0}, {0}
     }
 };
