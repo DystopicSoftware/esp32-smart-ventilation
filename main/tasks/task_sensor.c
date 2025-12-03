@@ -2,32 +2,40 @@
 #include "hal_interfaces.h"
 #include <esp_log.h>
 
-// Dependencias inyectadas
-extern const temp_sensor_interface_t temp_mock_impl;
-extern const pir_sensor_interface_t pir_mock_impl;
+static const char *TAG = "TASK_SENSOR"; // ¡Aquí está la corrección del error de imagen!
+
+// Importar interfaces disponibles
+extern const temp_sensor_interface_t temp_mock_impl; // Mock Temp (Usar este hoy)
+extern const temp_sensor_interface_t ntc_sensor_impl; // Real Temp (Falta resistencia)
+
+extern const pir_sensor_interface_t pir_mock_impl;   // Mock PIR
+extern const pir_sensor_interface_t pir_driver_impl; // Real PIR (Usar este hoy)
 
 void sensor_task(void *pvParameters) {
     app_context_t *ctx = (app_context_t *)pvParameters;
-    const char *TAG = "TASK_SENSOR";
     
-    // Inicializar Mocks
-    temp_mock_impl.init();
-    pir_mock_impl.init();
+    // --- CONFIGURACIÓN HÍBRIDA ---
+    // Temperatura: MOCK (porque no hay resistencia)
+    const temp_sensor_interface_t *temp_sensor = &temp_mock_impl;
+    
+    // Presencia: REAL (Driver HW-416)
+    const pir_sensor_interface_t *pir_sensor = &pir_driver_impl;
+
+    // Inicializar
+    temp_sensor->init();
+    pir_sensor->init();
 
     sensor_data_t data;
 
     while (1) {
-        // 1. Leer Hardware (Abstracto)
-        data.temperature = temp_mock_impl.read_celsius();
-        data.presence_detected = pir_mock_impl.is_motion_detected();
-        data.timestamp = 0; // TODO: Usar gettimeofday() cuando NTP esté listo
+        data.temperature = temp_sensor->read_celsius();
+        data.presence_detected = pir_sensor->is_motion_detected();
+        data.timestamp = 0; 
 
-        // 2. Enviar a Cola
         if (xQueueSend(ctx->sensor_queue, &data, pdMS_TO_TICKS(100)) != pdTRUE) {
             ESP_LOGW(TAG, "Queue full!");
         }
 
-        // Frecuencia de muestreo: 1 segundo
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

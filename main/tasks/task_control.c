@@ -6,7 +6,9 @@
 #include <sys/time.h>
 
 static const char *TAG = "TASK_CONTROL";
-extern const fan_interface_t fan_mock_impl;
+//extern const fan_interface_t fan_mock_impl;
+extern const fan_interface_t fan_driver_impl; // USAR ESTE (Real PWM)
+
 
 // --- FUNCIONES AUXILIARES ---
 
@@ -48,7 +50,8 @@ static uint32_t calculate_pwm_linear(float current_temp, float t_min, float t_ma
 void control_task(void *pvParameters) {
     app_context_t *ctx = (app_context_t *)pvParameters;
     
-    fan_mock_impl.init();
+    // Inicializar el Driver Real (LED integrado GPIO 2)
+    fan_driver_impl.init();
 
     sensor_data_t incoming_data;
     uint32_t target_pwm = 0;
@@ -124,7 +127,7 @@ void control_task(void *pvParameters) {
             xSemaphoreGive(ctx->config_mutex); 
 
             // 5. Actuar sobre el Hardware (Ventilador)
-            fan_mock_impl.set_duty(target_pwm);
+            fan_driver_impl.set_duty(target_pwm);
 
             // 6. Logging informativo
             ESP_LOGI(TAG, "[%s] Mode: %d | Temp: %.1f | PIR: %d -> PWM: %lu%%", 

@@ -7,8 +7,8 @@
 #include "esp_sntp.h"
 
 // --- CREDENCIALES WIFI ---
-#define WIFI_SSID      "Teddy"
-#define WIFI_PASS      "amoateddy"
+#define WIFI_SSID      "iPhone de Valeria"
+#define WIFI_PASS      "ValeriaCO"
 // -------------------------
 
 static const char *TAG = "WIFI_NTP";
