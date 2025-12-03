@@ -59,86 +59,80 @@ void control_task(void *pvParameters) {
     bool time_synced = false;
 
     while (1) {
-        // Esperar datos del sensor
+        // Esperar datos del sensor (Bloqueante hasta que llegue algo)
         if (xQueueReceive(ctx->sensor_queue, &incoming_data, portMAX_DELAY) == pdTRUE) {
             
-            // Actualizar tiempo
+            // 1. Actualizar tiempo
             time(&now);
             localtime_r(&now, &timeinfo);
-            // Si el año es < 2020, asumimos que NTP no ha sincronizado aún
             time_synced = (timeinfo.tm_year > (2020 - 1900));
 
+            // 2. Tomar Mutex para leer Config y escribir Estado
             xSemaphoreTake(ctx->config_mutex, portMAX_DELAY);
             system_config_t *cfg = ctx->shared_config;
 
+            // --- LÓGICA DE CONTROL ---
             switch (cfg->operation_mode) {
-                // ---------------- MANUAL ----------------
-                case 0: 
+                case 0: // MANUAL
                     target_pwm = cfg->manual_duty;
                     break;
 
-                // ---------------- AUTO (General) ----------------
-                case 1: 
+                case 1: // AUTO
                     if (incoming_data.presence_detected) {
-                        // Usamos un rango genérico hardcodeado por ahora (o podrías agregarlo a config global)
                         target_pwm = calculate_pwm_linear(incoming_data.temperature, 24.0, 28.0);
                     } else {
                         target_pwm = 0;
                     }
                     break;
 
-                // ---------------- PROGRAMADO (Horarios) ----------------
-                case 2:
-                    target_pwm = 0; // Por defecto apagado si no coincide horario
-                    
+                case 2: // PROGRAMADO
+                    target_pwm = 0; 
                     if (!time_synced) {
-                        ESP_LOGW(TAG, "Modo Programado requiere NTP. Hora no valida.");
+                        ESP_LOGW(TAG, "Falta NTP para modo programado");
                         break; 
                     }
-
-                    if (!incoming_data.presence_detected) {
-                         // Regla de Oro: Sin presencia = Apagado (incluso en horario)
-                         target_pwm = 0;
-                    } else {
-                        // Buscar en los 3 registros
-                        bool match_found = false;
+                    if (incoming_data.presence_detected) {
                         for (int i = 0; i < 3; i++) {
                             schedule_reg_t *reg = &cfg->schedules[i];
-                            
                             if (reg->active && is_time_in_range(&timeinfo, reg)) {
-                                match_found = true;
                                 target_pwm = calculate_pwm_linear(
                                     incoming_data.temperature, 
                                     reg->temp_min_0_percent, 
                                     reg->temp_max_100_percent
                                 );
-                                
-                                ESP_LOGI(TAG, "Registro #%d Activo (%02d:%02d-%02d:%02d). Rango Temp: %.1f-%.1f", 
-                                         i, reg->start_hour, reg->start_min, reg->end_hour, reg->end_min,
-                                         reg->temp_min_0_percent, reg->temp_max_100_percent);
-                                break; // Prioridad al primero que encuentre
+                                // Log breve para depuración
+                                ESP_LOGD(TAG, "Regla horaria #%d activa", i);
+                                break; 
                             }
-                        }
-                        if (!match_found) {
-                            ESP_LOGD(TAG, "Fuera de horario programado");
                         }
                     }
                     break;
             }
-            xSemaphoreGive(ctx->config_mutex);
 
-            // Logging de estado
-            char time_buf[10];
-            strftime(time_buf, sizeof(time_buf), "%H:%M:%S", &timeinfo);
-            
+            // 3. Actualizar el Estado Compartido (Para el Servidor Web)
+            if (ctx->shared_state != NULL) {
+                ctx->shared_state->current_temp = incoming_data.temperature;
+                ctx->shared_state->presence = incoming_data.presence_detected;
+                ctx->shared_state->current_pwm = target_pwm;
+                strftime(ctx->shared_state->current_time_str, 16, "%H:%M:%S", &timeinfo);
+            }
+
+            // Guardamos el modo en una variable local para el log, así podemos soltar el mutex rápido
+            int current_mode = cfg->operation_mode;
+
+            // 4. Liberar Mutex (¡SOLO UNA VEZ!)
+            xSemaphoreGive(ctx->config_mutex); 
+
+            // 5. Actuar sobre el Hardware (Ventilador)
+            fan_mock_impl.set_duty(target_pwm);
+
+            // 6. Logging informativo
             ESP_LOGI(TAG, "[%s] Mode: %d | Temp: %.1f | PIR: %d -> PWM: %lu%%", 
-                     time_buf,
-                     ctx->shared_config->operation_mode, 
+                     ctx->shared_state->current_time_str,
+                     current_mode, // Usamos la variable local
                      incoming_data.temperature, 
                      incoming_data.presence_detected, 
                      target_pwm);
-
-            fan_mock_impl.set_duty(target_pwm);
         }
     }
 }

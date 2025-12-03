@@ -86,6 +86,7 @@ idf.py -p COMx flash monitor
 - [x] Mocks de Sensores
 - [x] Almacenamiento NVS
 - [x] Sincronización NTP
-- [ ] **Próximo:** Lógica de "Modo Programado" (Horarios)
+- [x] Sincronización NTP y Motor de Horarios.
 - [ ] Servidor Web (Rest API) para configuración
 - [ ] Integración Hardware Real
+- [ ] Actualizaciones OTA (Over-The-Air).

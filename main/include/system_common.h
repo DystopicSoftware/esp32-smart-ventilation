@@ -40,10 +40,20 @@ typedef struct {
     schedule_reg_t schedules[3];
 } system_config_t;
 
-// Contexto del Sistema (Inyección de dependencias)
+// --- NUEVO: Estado en tiempo real (Volátil, solo para visualización) ---
+typedef struct {
+    float current_temp;
+    bool presence;
+    uint32_t current_pwm;
+    char current_time_str[16]; // "HH:MM:SS"
+} system_state_t;
+
+// Modificar el contexto para incluir el estado
 typedef struct {
     QueueHandle_t sensor_queue;
     QueueHandle_t actuator_queue;
     SemaphoreHandle_t config_mutex;
-    system_config_t *shared_config; // Puntero a config en memoria compartida
+    system_config_t *shared_config;
+    system_state_t  *shared_state; // <--- NUEVO PUNTERO
 } app_context_t;
+
