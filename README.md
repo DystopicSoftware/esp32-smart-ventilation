@@ -14,7 +14,7 @@ El sistema es funcional a nivel de software. No requiere hardware externo todav�
 El software sigue un patrón de capas concéntricas con comunicación asíncrona por colas FreeRTOS.
 
 ```mermaid
-graph TD
+graph  TD
     subgraph "Hardware Abstraction Layer (HAL)"
         M_TEMP[Mock Temp] -->|I_Temp| T_SENS[Sensor Task]
         M_PIR[Mock PIR] -->|I_PIR| T_SENS
