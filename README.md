@@ -90,3 +90,31 @@ idf.py -p COMx flash monitor
 - [ ] Servidor Web (Rest API) para configuración
 - [ ] Integración Hardware Real
 - [ ] Actualizaciones OTA (Over-The-Air).
+
+
+
+# 🔌 Diagrama de Conexiones (Pinout)
+
+A continuación, se detalla el esquema de conexión física de los componentes en la protoboard con el módulo **ESP32**:
+
+| Componente | Pin Componente | Pin ESP32 | Función | Notas |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sensor PIR** | VCC (+) | **VIN** | 5V | Alimentación directa del USB. |
+| | GND (-) | **GND** | Tierra | Referencia común. |
+| | OUT (Señal) | **GPIO 27** | Input | Lectura digital (0/1). |
+| **Termistor NTC** | Pin A | **3.3V** | 3.3V | A través de una resistencia de $100\Omega$. |
+| | Pin B | **GND** | Tierra | Referencia común. |
+| | Nodo Central | **GPIO 34** | ADC1\_6 | Punto medio del divisor de tensión. |
+| **LED/Fan** | Ánodo (+) | **GPIO 2** | LEDC | Controla el LED integrado en la placa (D2). |
+
+---
+
+### 📝 Nota sobre el Circuito del NTC
+
+Se implementó un circuito divisor de voltaje para la lectura del termistor NTC.
+
+La conexión es la siguiente:
+
+$$3.3V \quad \longleftrightarrow \quad \text{Resistencia } 100\Omega \quad \longleftrightarrow \quad [\text{NODO A (GPIO 34)}] \quad \longleftrightarrow \quad \text{NTC 47D} \quad \longleftrightarrow \quad GND$$
+
+---
