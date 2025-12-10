@@ -7,6 +7,7 @@ Sistema de control ambiental inteligente basado en **ESP32**, diseñado para reg
 
 El proyecto utiliza **FreeRTOS** para la gestión de tareas en tiempo real y ofrece una interfaz web completa para el control y monitoreo remoto.
 
+
 ---
 
 ## 🛠️ Descripción del Hardware
@@ -46,6 +47,7 @@ graph TD
     
     ESP <-->|WiFi 2.4GHz| ROUTER[Router WiFi]
     ROUTER <-->|HTTP| CLIENT[Cliente Web PC/Móvil]
+```
 ## 🏗️ Arquitectura del Sistema
 
 El software sigue un patrón de capas concéntricas con comunicación asíncrona por colas FreeRTOS.
