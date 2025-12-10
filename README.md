@@ -196,3 +196,40 @@ graph TD
 
 
 ```
+
+
+## 🧵 Descripción de Tareas (FreeRTOS)
+
+El sistema ejecuta concurrentemente las siguientes tareas principales, cada una con una responsabilidad bien definida:
+
+### 1. `sensor_task` (Productor)
+
+* **Responsabilidad:** Adquirir datos del mundo físico.
+* **Acciones:**
+    * Lee el voltaje del termistor mediante ADC OneShot.
+    * Aplica la ecuación Beta y la calibración por offset ($\text{-9.5}^\circ\text{C}$) para obtener la temperatura real.
+    * Lee el estado digital del sensor PIR.
+    * Empaqueta los datos en una estructura `sensor_data_t` y los envía a una cola.
+* **Frecuencia:** $1 \text{ Hz}$ (1 lectura por segundo).
+
+### 2. `control_task` (Consumidor)
+
+* **Responsabilidad:** Cerebro del sistema. Toma decisiones basadas en la configuración del usuario.
+* **Acciones:**
+    * Recibe datos de la cola de sensores.
+    * Sincroniza la hora con NTP.
+    * **Evalúa el Modo de Operación:**
+        * **MANUAL:** Fija el PWM según el *slider* web.
+        * **AUTO:** Calcula PWM proporcional a la temperatura (Rango $15^\circ\text{C}-25^\circ\text{C}$) solo si hay presencia.
+        * **PROGRAMADO:** Verifica si la hora actual coincide con alguno de los 3 registros configurados.
+    * Actualiza el ciclo de trabajo (Duty Cycle) del LED/Ventilador.
+    * Actualiza el estado global (`shared_state`) para la interfaz web.
+
+### 3. `web_server` (Interfaz)
+
+* **Responsabilidad:** Comunicación con el usuario.
+* **Acciones:**
+    * Sirve la interfaz gráfica (HTML/JS embebido) en la ruta `/`.
+    * **Expone API REST:**
+        * `GET /api/status`: Envía JSON con temperatura, PWM, hora y horarios.
+        * `POST /api/settings`: Recibe cambios de modo, configuración manual y horarios.
