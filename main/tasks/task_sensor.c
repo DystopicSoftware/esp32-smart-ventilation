@@ -14,14 +14,11 @@ extern const pir_sensor_interface_t pir_driver_impl; // Real PIR (Usar este hoy)
 void sensor_task(void *pvParameters) {
     app_context_t *ctx = (app_context_t *)pvParameters;
     
-    // --- CONFIGURACIÓN HÍBRIDA ---
-    // Temperatura: MOCK (porque no hay resistencia)
-    const temp_sensor_interface_t *temp_sensor = &temp_mock_impl;
+    // --- CAMBIO AQUÍ: Usamos el NTC Real ---
+    const temp_sensor_interface_t *temp_sensor = &ntc_sensor_impl; // <--- YA NO ES EL MOCK
     
-    // Presencia: REAL (Driver HW-416)
-    const pir_sensor_interface_t *pir_sensor = &pir_driver_impl;
+    const pir_sensor_interface_t *pir_sensor = &pir_driver_impl;   // PIR Real
 
-    // Inicializar
     temp_sensor->init();
     pir_sensor->init();
 

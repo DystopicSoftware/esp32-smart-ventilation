@@ -82,7 +82,7 @@ void control_task(void *pvParameters) {
 
                 case 1: // AUTO
                     if (incoming_data.presence_detected) {
-                        target_pwm = calculate_pwm_linear(incoming_data.temperature, 24.0, 28.0);
+                        target_pwm = calculate_pwm_linear(incoming_data.temperature, 15.0, 25.0);
                     } else {
                         target_pwm = 0;
                     }
