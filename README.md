@@ -157,3 +157,42 @@ La conexión es la siguiente:
 $$3.3V \quad \longleftrightarrow \quad \text{Resistencia } 100\Omega \quad \longleftrightarrow \quad [\text{NODO A (GPIO 34)}] \quad \longleftrightarrow \quad \text{NTC 47D} \quad \longleftrightarrow \quad GND$$
 
 ---
+
+
+# 💾 Diagrama de Bloques del Firmware
+
+El firmware sigue una arquitectura modular basada en el patrón **Productor-Consumidor** y FreeRTOS para la concurrencia.
+
+
+```mermaid
+graph TD
+    subgraph "Capa de Aplicación (Tasks)"
+        TS[Sensor Task] 
+        TC[Control Task]
+        TW[Web Server Task]
+    end
+
+    subgraph "Capa de Abstracción (HAL)"
+        ADC[ADC Driver]
+        GPIO[GPIO Driver]
+        PWM[LEDC PWM Driver]
+    end
+
+    subgraph "Servicios del Sistema"
+        NVS[NVS Storage]
+        WIFI[WiFi Station]
+        NTP[SNTP Time Sync]
+    end
+
+    %% Relaciones
+    ADC -->|Raw Data| TS
+    GPIO -->|Digital Data| TS
+    TS -->|Queue: SensorData| TC
+    TC -->|Logica PID/On-Off| PWM
+    TC <-->|Config Struct| NVS
+    NTP -->|Hora Actual| TC
+    TC <-->|Shared State| TW
+    TW <-->|JSON/HTML| WIFI
+
+
+```
