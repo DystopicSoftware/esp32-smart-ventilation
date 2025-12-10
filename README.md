@@ -1,14 +1,51 @@
-# 🌬️ Smart Crib Ventilation System (ESP32)
+# 🌬️ Sistema de Ventilación Inteligente para Cuna (IoT)
 
-Sistema de ventilación inteligente modular para cunas, basado en ESP32 y ESP-IDF. El sistema controla un ventilador PWM basándose en temperatura y presencia, permitiendo modos manuales, automáticos y programados por horario.
+Sistema de control ambiental inteligente basado en **ESP32**, diseñado para regular la ventilación automáticamente mediante:
+* **Monitoreo de temperatura.**
+* **Detección de presencia.**
+* **Programación horaria.**
 
-## 🚀 Estado Actual (Fase 2 - Simulación Conectada)
-El sistema es funcional a nivel de software. No requiere hardware externo todavía.
-- **Arquitectura:** Completamente modular (HAL, Core, Drivers).
-- **Sensores:** Simulados mediante "Mocks" (generan datos aleatorios).
-- **Conectividad:** WiFi STA + NTP (Sincronización horaria automática).
-- **Persistencia:** Guardado de configuración en NVS Flash.
+El proyecto utiliza **FreeRTOS** para la gestión de tareas en tiempo real y ofrece una interfaz web completa para el control y monitoreo remoto.
 
+---
+
+## 🛠️ Descripción del Hardware
+
+El sistema está implementado como un prototipo híbrido funcional que integra diversos componentes para la adquisición de datos y la actuación.
+
+### Componentes Utilizados
+
+| Componente | Especificación | Función y Configuración |
+| :--- | :--- | :--- |
+| **Microcontrolador** | ESP32-DevKitC V1 | SoC **Xtensa® Dual-Core 32-bit LX6** (Plataforma principal). |
+| **Sensor de Temperatura** | **Termistor NTC 47D-15** | Sensor adaptado (Originalmente limitador de corriente) con calibración por software. Configurado en un divisor de tensión con resistencia serie de **$100\Omega$**. |
+| **Sensor de Presencia** | **PIR HW-416-B (HC-SR501)** | Sensor infrarrojo pasivo utilizado para la detección de movimiento. |
+| **Actuador** | **LED Azul Integrado (GPIO 2)** | Simula la función del ventilador. Controlado por señal **PWM (LEDC)** para variar el brillo y representar la velocidad del motor. |
+
+---
+
+## 📐 Diagrama de Bloques del Hardware
+
+El siguiente diagrama muestra el flujo de datos y la interconexión lógica de los componentes.
+
+
+
+```mermaid
+graph TD
+    PS[Fuente de Alimentación USB 5V] -->|5V| ESP[ESP32 DevKit V1]
+    PS -->|5V| PIR[Sensor PIR HW-416-B]
+    
+    subgraph Sensores
+    PIR -->|Señal Digital| ESP
+    NTC[NTC 47D-15] -->|Señal Analógica| ESP
+    end
+    
+    subgraph Actuadores
+    ESP -->|PWM Signal| LED[LED Azul / Ventilador]
+    end
+    
+    ESP <-->|WiFi 2.4GHz| ROUTER[Router WiFi]
+    ROUTER <-->|HTTP| CLIENT[Cliente Web PC/Móvil]
 ## 🏗️ Arquitectura del Sistema
 
 El software sigue un patrón de capas concéntricas con comunicación asíncrona por colas FreeRTOS.
